@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legends of The Land — CLE Daily</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+
+  <!-- ─────────────────────────────────────────────────────────────────────
+       PUZZLE DATA — loaded from a separate file so editors can update
+       content without touching this code. See puzzles.js to add puzzles.
+  ───────────────────────────────────────────────────────────────────────── -->
+  <script src="puzzles.js"></script>
+
+  <style>
+    /* ──────────────────────────────────────────────────────────────────────
+       COLOR TOKENS  —  cleveland.com brand palette
+       To update, change the hex values here only. Nothing else needs editing.
+
+       Sourced from the cleveland.com logo:
+         Circle mark:   steel blue  #2B6197
+         Logotype text: charcoal    #1A1A1A
+         Overall feel:  light, airy, clean
+
+       Full palette:
+         --clr-primary      steel blue   #2B6197   (icon, accents, CTAs)
+         --clr-primary-dk   deep blue    #1E4A7A   (hover / pressed)
+         --clr-primary-bg   ice blue     #EDF4FB   (tinted surfaces)
+         --clr-dark         charcoal     #1A1A1A   (headlines, strong text)
+         --clr-mid          warm gray    #505660   (secondary text, labels)
+         --clr-subtle       muted gray   #9098A4   (hints, placeholders)
+         --clr-border       silver       #D8DDE3   (default border)
+         --clr-border-soft  whisper      #ECEEF1   (hairline dividers)
+         --clr-bg           off-white    #F7F9FC   (page background)
+         --clr-surface      white        #FFFFFF   (cards, panels)
+    ────────────────────────────────────────────────────────────────────── */
+    :root {
+      --clr-primary:      #2B6197;
+      --clr-primary-dk:   #1E4A7A;
+      --clr-primary-bg:   #EDF4FB;
+      --clr-dark:         #1A1A1A;
+      --clr-mid:          #505660;
+      --clr-subtle:       #9098A4;
+      --clr-border:       #D8DDE3;
+      --clr-border-soft:  #ECEEF1;
+      --clr-bg:           #F7F9FC;
+      --clr-surface:      #FFFFFF;
+
+      --font-display: 'Oswald', sans-serif;
+      --font-serif:   'Source Serif 4', Georgia, serif;
+      --font-sans:    'DM Sans', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--clr-bg);
+      color: var(--clr-dark);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────────────────── */
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 0 16px 40px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    .game-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 12px;
+      border-bottom: 2px solid var(--clr-primary);
+      margin-bottom: 14px;
+    }
+    .logo-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+    .logo-kicker {
+      font-family: var(--font-sans);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: var(--clr-primary);
+      line-height: 1;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .logo-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 22px;
+      color: var(--clr-dark);
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .streak-badge {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--clr-primary);
+    }
+    .timer {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--clr-dark);
+      min-width: 52px;
+      text-align: right;
+      transition: color 0.3s;
+      letter-spacing: 0.03em;
+    }
+    .timer.danger { color: var(--clr-primary); }
+
+    /* ── Category strip ──────────────────────────────────────────────────── */
+    .category-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .category-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 3px;
+    }
+    .cat-team {
+      background: var(--clr-dark);
+      color: var(--clr-bg);
+    }
+    .cat-type {
+      background: var(--clr-border-soft);
+      color: var(--clr-mid);
+    }
+    .cat-era {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 12px;
+      color: var(--clr-subtle);
+      letter-spacing: 0;
+      padding: 4px 0;
+    }
+
+    /* ── Letter Grid ─────────────────────────────────────────────────────── */
+    .letter-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+    .word-group { display: flex; gap: 5px; }
+    .letter-box {
+      width: 40px;
+      height: 48px;
+      border: 2px solid var(--clr-border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--clr-dark);
+      background: var(--clr-surface);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .letter-box.revealed {
+      border-color: var(--clr-primary);
+      border-width: 2px;
+      background: var(--clr-primary-bg);
+      animation: pop 0.22s ease;
+    }
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(1.09); }
+      100% { transform: scale(1); }
+    }
+
+    /* ── Wrong-guess indicator ───────────────────────────────────────────── */
+    .lights-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .lights-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--clr-subtle);
+      text-transform: uppercase;
+    }
+    .lights { display: flex; gap: 6px; }
+    .light {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      transition: all 0.4s ease;
+    }
+    .light-on  { background: var(--clr-primary); box-shadow: 0 0 5px rgba(204,17,34,0.4); }
+    .light-out { background: var(--clr-border); opacity: 0.35; box-shadow: none; }
+
+    /* ── Clues ───────────────────────────────────────────────────────────── */
+    .clues-panel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+    .clue {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 13px;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.6;
+      animation: slideIn 0.28s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .clue-auto {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-left: 3px solid var(--clr-primary);
+    }
+    .clue-optional {
+      background: #F2F7FF;
+      border: 1px solid #B8CCEE;
+      border-left: 3px solid var(--clr-primary);
+    }
+    .clue-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+    .clue-type {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--clr-subtle);
+      margin-bottom: 2px;
+    }
+    .clue-text {
+      font-family: var(--font-serif);
+      color: var(--clr-dark);
+      font-size: 13.5px;
+    }
+
+    /* ── Optional clue button ────────────────────────────────────────────── */
+    .opt-clue-row { width: 100%; margin-bottom: 8px; }
+    .btn-clue {
+      width: 100%;
+      background: transparent;
+      border: 1.5px dashed var(--clr-border);
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+      color: var(--clr-mid);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-clue:hover { background: var(--clr-primary-bg); border-color: var(--clr-primary); color: var(--clr-primary-dk); }
+    .clue-cost { font-size: 11px; font-weight: 600; color: var(--clr-primary); }
+
+    /* ── Keyboard ────────────────────────────────────────────────────────── */
+    .keyboard { width: 100%; margin-top: 2px; }
+    .key-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 5px;
+    }
+    .key {
+      width: 32px;
+      height: 40px;
+      border: 1.5px solid #2A3D52;
+      border-radius: 4px;
+      background: #1B2A3D;
+      color: #EEF3F8;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.08s, background 0.12s, border-color 0.12s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .key:hover:not(:disabled) { transform: translateY(-1px); background: #2A3D52; }
+    .key:active:not(:disabled) { transform: scale(0.94); }
+    .key:disabled { cursor: default; }
+    .key-correct { background: var(--clr-primary) !important; border-color: var(--clr-primary-dk) !important; color: #FFF !important; }
+    .key-wrong   { background: var(--clr-border-soft) !important; border-color: var(--clr-border) !important; color: var(--clr-subtle) !important; }
+
+    /* ── Shared buttons ──────────────────────────────────────────────────── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 13px 24px;
+      border-radius: 4px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      margin-top: 10px;
+      transition: transform 0.08s, opacity 0.15s;
+      text-align: center;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--clr-primary); color: #FFF; }
+    .btn-primary:hover { background: var(--clr-primary-dk); }
+    .btn-ghost { background: transparent; color: var(--clr-mid); border: 1px solid var(--clr-border); }
+    .btn-ghost:hover { background: var(--clr-border-soft); }
+
+    /* ── Result screen ───────────────────────────────────────────────────── */
+    .result-screen { padding-top: 20px; }
+
+    .result-header { text-align: center; margin-bottom: 20px; width: 100%; }
+    .result-kicker {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
+      color: var(--clr-primary); text-transform: uppercase; margin-bottom: 6px;
+    }
+    .result-headline {
+      font-family: var(--font-display);
+      font-size: 40px; font-weight: 700;
+      color: var(--clr-dark); line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .answer-card {
+      width: 100%;
+      background: #1B2A3D;
+      border-radius: 4px;
+      padding: 22px 20px;
+      margin-bottom: 14px;
+      color: #F0F5FA;
+    }
+    .answer-kicker { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: #7DB8E8; margin-bottom: 6px; text-transform: uppercase; }
+    .answer-name { font-family: var(--font-display); font-size: 32px; font-weight: 700; letter-spacing: 0.03em; margin-bottom: 12px; line-height: 1; }
+    .answer-context { font-family: var(--font-serif); font-size: 13.5px; line-height: 1.75; color: #A8BDD0; margin-bottom: 14px; }
+    .answer-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+      padding: 3px 9px; border-radius: 3px; text-transform: uppercase;
+    }
+    .tag-team { background: rgba(255,255,255,0.10); color: #C8DCF0; }
+    .tag-diff-easy   { background: #133320; color: #70C870; }
+    .tag-diff-medium { background: #1E2E45; color: #70A8D8; }
+    .tag-diff-hard   { background: #2D1830; color: #C08CC8; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .stat-card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: 4px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .stat-icon  { font-size: 17px; margin-bottom: 5px; }
+    .stat-value { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--clr-dark); line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--clr-subtle); text-transform: uppercase; }
+
+    .score-card {
+      width: 100%;
+      border: 2px solid var(--clr-primary);
+      border-radius: 4px;
+      padding: 16px 20px;
+      text-align: center;
+      margin-bottom: 2px;
+    }
+    .score-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: var(--clr-subtle); text-transform: uppercase; margin-bottom: 4px; }
+    .score-value { font-family: var(--font-display); font-size: 50px; font-weight: 700; color: var(--clr-primary); line-height: 1; }
+    .score-miss  { color: var(--clr-mid); }
+    .score-sub   { font-size: 13px; color: var(--clr-mid); margin-top: 4px; }
+
+    /* ── Share card ──────────────────────────────────────────────────────── */
+    .share-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .share-panel {
+      width: 100%;
+      background: #1B2A3D;
+      border-radius: 4px;
+      padding: 28px 24px;
+      text-align: center;
+      color: #EEF3F8;
+      margin-bottom: 14px;
+    }
+    .share-kicker { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; color: #7DB8E8; text-transform: uppercase; margin-bottom: 6px; }
+    .share-title  { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .share-sub    { font-family: var(--font-serif); font-style: italic; font-size: 13px; color: #6888A8; margin-bottom: 20px; }
+    .share-squares { font-size: 26px; letter-spacing: 6px; margin-bottom: 18px; line-height: 1; }
+    .sq-red    { color: #E87070; }
+    .sq-filled { color: #405878; }
+    .share-result { font-family: var(--font-display); font-size: 17px; font-weight: 700; margin-bottom: 5px; }
+    .share-meta   { font-size: 13px; color: #6888A8; margin-bottom: 4px; }
+    .share-streak { font-size: 14px; font-weight: 600; color: #7DB8E8; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    /* ── Constants ─────────────────────────────────────────────────────── */
+    const MAX_WRONG     = 6;
+    const GAME_DURATION = 180; // 3 minutes
+    const KEYBOARD_ROWS = [
+      ['Q','W','E','R','T','Y','U','I','O','P'],
+      ['A','S','D','F','G','H','J','K','L'],
+      ['Z','X','C','V','B','N','M']
+    ];
+
+    /* ── Puzzle source — loaded from puzzles.js ────────────────────────── */
+    const ALL_PUZZLES = window.PUZZLES || [];
+
+    /* ── Utilities ─────────────────────────────────────────────────────── */
+    const dayIndex    = () => Math.floor(Date.now() / 86_400_000);
+    const todayKey    = () => `cle-legends-v2-${dayIndex()}`;
+    const todayPuzzle = () => ALL_PUZZLES[dayIndex() % ALL_PUZZLES.length];
+
+    const loadSaved   = () => { try { const s = localStorage.getItem(todayKey()); return s ? JSON.parse(s) : null; } catch { return null; } };
+    const persist     = s  => { try { localStorage.setItem(todayKey(), JSON.stringify(s)); } catch {} };
+    const loadStreak  = () => { try { return parseInt(localStorage.getItem('cle-streak') || '0', 10); } catch { return 0; } };
+
+    const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+    function calcScore(wrong, optUsed, elapsed, status) {
+      if (status !== 'won') return 0;
+      return Math.max(0, 1000 - wrong * 80 - optUsed * 100 - Math.floor(elapsed * 1.5));
+    }
+
+    /* ── App ───────────────────────────────────────────────────────────── */
+    function App() {
+      if (!ALL_PUZZLES.length) {
+        return (
+          <div className="screen" style={{justifyContent:'center',textAlign:'center',gap:16}}>
+            <div style={{fontFamily:'var(--font-display)',fontSize:28,color:'var(--clr-primary)'}}>
+              No puzzles found.
+            </div>
+            <p style={{color:'var(--clr-mid)',fontSize:14}}>
+              Make sure puzzles.js is in the same folder as index.html.
+            </p>
+          </div>
+        );
+      }
+
+      const puzzle       = todayPuzzle();
+      const answerWords  = puzzle.answer.split(' ');
+      const answerSet    = new Set(puzzle.answer.replace(/ /g,'').split(''));
+
+      const saved = loadSaved();
+
+      const [guessed,       setGuessed]       = useState(new Set(saved?.guessed || []));
+      const [wrongCount,    setWrongCount]     = useState(saved?.wrongCount    || 0);
+      const [autoShown,     setAutoShown]      = useState(saved?.autoShown     || 0);
+      const [optUsed,       setOptUsed]        = useState(saved?.optUsed       || 0);
+      const [status,        setStatus]         = useState(saved?.status        || 'playing');
+      const [timeLeft,      setTimeLeft]       = useState(saved?.timeLeft      ?? GAME_DURATION);
+      const [elapsed,       setElapsed]        = useState(saved?.elapsed       || 0);
+      const [totalGuesses,  setTotalGuesses]   = useState(saved?.totalGuesses  || 0);
+      const [streak,        setStreak]         = useState(loadStreak);
+      const [view,          setView]           = useState(saved?.status && saved.status !== 'playing' ? 'result' : 'game');
+      const [copied,        setCopied]         = useState(false);
+
+      const timerRef = useRef(null);
+
+      /* Timer */
+      useEffect(() => {
+        if (status !== 'playing') return;
+        timerRef.current = setInterval(() => {
+          setTimeLeft(t => Math.max(0, t - 1));
+          setElapsed(e => e + 1);
+        }, 1000);
+        return () => clearInterval(timerRef.current);
+      }, [status]);
+
+      /* Auto-clue triggers */
+      useEffect(() => {
+        if (status !== 'playing') return;
+        let n = autoShown;
+        if (wrongCount >= 1 && n < 1) n = 1;
+        if ((elapsed >= 30 || totalGuesses >= 3) && n < 2) n = Math.max(n, 2);
+        if (wrongCount >= 3 && n < 3) n = 3;
+        if (n !== autoShown) setAutoShown(n);
+      }, [wrongCount, elapsed, totalGuesses, status]);
+
+      /* Persist */
+      useEffect(() => {
+        persist({ guessed:[...guessed], wrongCount, autoShown, optUsed, status, timeLeft, elapsed, totalGuesses });
+      }, [guessed, wrongCount, autoShown, optUsed, status, timeLeft, elapsed, totalGuesses]);
+
+      /* Guess */
+      const handleGuess = useCallback(letter => {
+        if (status !== 'playing' || guessed.has(letter)) return;
+        const g = new Set(guessed); g.add(letter);
+        const correct = answerSet.has(letter);
+        const newWrong = correct ? wrongCount : wrongCount + 1;
+        setGuessed(g); setTotalGuesses(n => n + 1);
+        if (!correct) setWrongCount(newWrong);
+
+        if ([...answerSet].every(l => g.has(l))) {
+          clearInterval(timerRef.current);
+          setStatus('won'); setView('result');
+          const today = dayIndex().toString();
+          const yesterday = (dayIndex() - 1).toString();
+          const lastWin = localStorage.getItem('cle-last-win') || '';
+          const ns = lastWin === yesterday ? streak + 1 : lastWin === today ? streak : 1;
+          setStreak(ns);
+          try { localStorage.setItem('cle-streak', String(ns)); localStorage.setItem('cle-last-win', today); } catch {}
+          return;
+        }
+        if (newWrong >= MAX_WRONG) {
+          clearInterval(timerRef.current);
+          setStatus('lost'); setView('result'); setStreak(0);
+          try { localStorage.setItem('cle-streak', '0'); } catch {}
+        }
+      }, [status, guessed, answerSet, wrongCount, streak]);
+
+      /* Share text */
+      const shareText = () => {
+        const score = calcScore(wrongCount, optUsed, elapsed, status);
+        const won = status === 'won';
+        const squares = [
+          ...Array(wrongCount).fill('■'),
+          ...Array(MAX_WRONG - wrongCount).fill('■')
+        ];
+        return [
+          '🏈 Legends of The Land — CLE Daily',
+          `Puzzle #${puzzle.id} · ${puzzle.team} · ${puzzle.category}`,
+          '',
+          squares.map((s, i) => i < wrongCount ? `<span class="sq-red">${s}</span>` : s).join(''),
+          '',
+          won ? `✅ Solved in ${fmt(elapsed)}` : '❌ Missed today',
+          `${optUsed} clue${optUsed !== 1 ? 's' : ''} used${won ? ` · Score: ${score}` : ''}`,
+          streak > 0 ? `🔥 ${streak}-day streak` : '',
+          '',
+          'cleveland.com'
+        ].filter(l => l !== undefined).join('\n');
+      };
+
+      const plainShareText = () => {
+        const score = calcScore(wrongCount, optUsed, elapsed, status);
+        const won = status === 'won';
+        const squares = Array(wrongCount).fill('🟥').concat(Array(MAX_WRONG - wrongCount).fill('⬛')).join('');
+        return [
+          '🏈 Legends of The Land — CLE Daily',
+          `Puzzle #${puzzle.id} · ${puzzle.team} · ${puzzle.category}`,
+          '', squares, '',
+          won ? `✅ Solved in ${fmt(elapsed)}` : '❌ Missed today',
+          `${optUsed} clue${optUsed !== 1 ? 's' : ''} used${won ? ` · Score: ${score}` : ''}`,
+          streak > 0 ? `🔥 ${streak}-day streak` : '',
+          '', 'cleveland.com'
+        ].filter(Boolean).join('\n');
+      };
+
+      const handleCopy = () => {
+        const text = plainShareText();
+        const run = () => { setCopied(true); setTimeout(() => setCopied(false), 2500); };
+        navigator.clipboard?.writeText(text).then(run).catch(() => {
+          try {
+            const ta = Object.assign(document.createElement('textarea'), { value: text, style: 'position:fixed;opacity:0' });
+            document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); run();
+          } catch {}
+        });
+      };
+
+      const score = calcScore(wrongCount, optUsed, elapsed, status);
+      const won   = status === 'won';
+      const darknessOpacity = wrongCount / MAX_WRONG * 0.12;
+
+      /* ── Share view ──────────────────────────────────────────────────── */
+      if (view === 'share') return (
+        <div className="screen result-screen">
+          <div className="share-wrap">
+            <div className="share-panel">
+              <p className="share-kicker">Legends of The Land</p>
+              <h2 className="share-title">CLE Daily #{puzzle.id}</h2>
+              <p className="share-sub">{puzzle.team} · {puzzle.category} · {puzzle.era}</p>
+              <div className="share-squares">
+                {Array(wrongCount).fill(0).map((_,i)  => <span key={`r${i}`} className="sq-red">■</span>)}
+                {Array(MAX_WRONG - wrongCount).fill(0).map((_,i) => <span key={`f${i}`} className="sq-filled">■</span>)}
+              </div>
+              <div className="share-result">{won ? `✅ Solved in ${fmt(elapsed)}` : '❌ Missed today'}</div>
+              <div className="share-meta">{optUsed} clue{optUsed !== 1 ? 's' : ''} used{won ? ` · Score: ${score}` : ''}</div>
+              {streak > 0 && <div className="share-streak">🔥 {streak}-day streak</div>}
+            </div>
+            <button className="btn btn-primary" onClick={handleCopy}>{copied ? '✅ Copied!' : '📋 Copy share card'}</button>
+            <button className="btn btn-ghost"   onClick={() => setView('result')}>← Back</button>
+          </div>
+        </div>
+      );
+
+      /* ── Result view ─────────────────────────────────────────────────── */
+      if (view === 'result') return (
+        <div className="screen result-screen">
+          <div className="result-header">
+            <p className="result-kicker">Legends of The Land</p>
+            <h1 className="result-headline">{won ? 'Solved! 🎉' : 'Not today.'}</h1>
+          </div>
+
+          <div className="answer-card">
+            <p className="answer-kicker">Today's answer</p>
+            <h2 className="answer-name">{puzzle.answer}</h2>
+            <p className="answer-context">{puzzle.context}</p>
+            <div className="answer-tags">
+              <span className="tag tag-team">{puzzle.team}</span>
+              <span className="tag tag-team">{puzzle.category}</span>
+              <span className={`tag tag-diff-${puzzle.difficulty}`}>{puzzle.difficulty.charAt(0).toUpperCase() + puzzle.difficulty.slice(1)}</span>
+            </div>
+          </div>
+
+          <div className="stats-row">
+            {[['⏱','TIME',fmt(elapsed)],['❌','WRONG',wrongCount],['💡','CLUES',optUsed]].map(([icon,lbl,val]) => (
+              <div className="stat-card" key={lbl}>
+                <div className="stat-icon">{icon}</div>
+                <div className="stat-value">{val}</div>
+                <div className="stat-label">{lbl}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="score-card">
+            <div className="score-label">{won ? 'Final Score' : 'Come back tomorrow'}</div>
+            <div className={`score-value${won ? '' : ' score-miss'}`}>{won ? score : '—'}</div>
+            {streak > 0 && won && <div className="score-sub">🔥 {streak}-day streak</div>}
+            {!won && <div className="score-sub" style={{color:'var(--clr-primary)'}}>Streak reset</div>}
+          </div>
+
+          <button className="btn btn-primary" onClick={() => setView('share')}>Share results →</button>
+        </div>
+      );
+
+      /* ── Game view ───────────────────────────────────────────────────── */
+      return (
+        <div className="screen" style={{ filter:`brightness(${1 - darknessOpacity})`, transition:'filter 0.5s' }}>
+
+          {/* Header */}
+          <header className="game-header">
+            <div className="logo-wrap">
+              <div className="logo-kicker">Legends of The Land</div>
+              <div className="logo-title">CLE Daily</div>
+            </div>
+            <div className="header-right">
+              {streak > 0 && <div className="streak-badge">🔥 {streak}</div>}
+              <div className={`timer${timeLeft < 30 ? ' danger' : ''}`}>{fmt(timeLeft)}</div>
+            </div>
+          </header>
+
+          {/* Category strip */}
+          <div className="category-row">
+            <span className="category-label cat-team">{puzzle.team}</span>
+            <span className="category-label cat-type">{puzzle.category}</span>
+            <span className="cat-era">{puzzle.era}</span>
+          </div>
+
+          {/* Letter grid */}
+          <div className="letter-grid">
+            {answerWords.map((word, wi) => (
+              <div key={wi} className="word-group">
+                {word.split('').map((letter, li) => (
+                  <div key={li} className={`letter-box${guessed.has(letter) ? ' revealed' : ''}`}>
+                    {guessed.has(letter) ? letter : ''}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          {/* Wrong-guess indicator */}
+          <div className="lights-row">
+            <span className="lights-label">Guesses left</span>
+            <div className="lights">
+              {Array(MAX_WRONG).fill(0).map((_,i) => (
+                <div key={i} className={`light light-${i < wrongCount ? 'out' : 'on'}`} />
+              ))}
+            </div>
+          </div>
+
+          {/* Clues */}
+          {(autoShown > 0 || optUsed > 0) && (
+            <div className="clues-panel">
+              {puzzle.autoclues.slice(0, autoShown).map((c, i) => (
+                <div key={i} className="clue clue-auto">
+                  <span className="clue-icon">🔍</span>
+                  <div>
+                    <div className="clue-type">Clue {i + 1} · auto-unlocked</div>
+                    <div className="clue-text">{c}</div>
+                  </div>
+                </div>
+              ))}
+              {puzzle.optionalClues.slice(0, optUsed).map((c, i) => (
+                <div key={i} className="clue clue-optional">
+                  <span className="clue-icon">💡</span>
+                  <div>
+                    <div className="clue-type">Optional · {c.label}</div>
+                    <div className="clue-text">{c.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Optional clue button */}
+          {optUsed < puzzle.optionalClues.length && (
+            <div className="opt-clue-row">
+              <button className="btn-clue" onClick={() => setOptUsed(n => n + 1)}>
+                💡 Get a clue <span className="clue-cost">−100 pts</span>
+              </button>
+            </div>
+          )}
+
+          {/* Keyboard */}
+          <div className="keyboard">
+            {KEYBOARD_ROWS.map((row, ri) => (
+              <div key={ri} className="key-row">
+                {row.map(letter => {
+                  const isCorrect = guessed.has(letter) && answerSet.has(letter);
+                  const isWrong   = guessed.has(letter) && !answerSet.has(letter);
+                  return (
+                    <button
+                      key={letter}
+                      className={`key${isCorrect ? ' key-correct' : isWrong ? ' key-wrong' : ''}`}
+                      onClick={() => handleGuess(letter)}
+                      disabled={guessed.has(letter)}
+                    >
+                      {letter}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
